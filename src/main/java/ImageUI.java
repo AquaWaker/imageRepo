@@ -127,18 +127,24 @@ public class ImageUI extends JFrame implements Serializable {
         File[] listOfImages = folder.listFiles();
         String message = "Couldn't Old Images, please try again";
 
-        try {
-            for (File file : listOfImages) {
-                if (file.isFile()) {
-                    BufferedImage img = ImageIO.read(file);
-                    images.put(fileComponent(file.getName()), img);
+        if (!folder.exists()) {
+            folder.mkdir();
+        } else {
+            try {
+                for (File file : listOfImages) {
+                    if (file.isFile()) {
+                        BufferedImage img = ImageIO.read(file);
+                        images.put(fileComponent(file.getName()), img);
 
-                    imageField.setText(imageField.getText() + fileComponent(file.getName()) + "\n");
+                        imageField.setText(imageField.getText() + fileComponent(file.getName()) + "\n");
+                    }
                 }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(frame, message, "Error Message", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(frame, message, "Error Message", JOptionPane.ERROR_MESSAGE);
         }
+
+
 
 
     }
