@@ -26,7 +26,8 @@ import javax.imageio.*;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.Serializable;
 
 
@@ -47,20 +48,21 @@ public class ImageUI extends JFrame implements Serializable {
     private JMenu fileMenu;
     private JFrame frame;
 
-    private transient ArrayList<BufferedImage> images;
+    private transient HashMap<String, BufferedImage> images;
 
     /**
      * Constructor.
      */
     public ImageUI() {
         super("my awesome repository");
-        images = new ArrayList<BufferedImage>();
+        images = new HashMap<String, BufferedImage>();
         contentPane = getContentPane();
         setWindowDefaults();
         setUpPanels();
         pack();
         setSize(WIDTH, HEIGHT);
         frame = new JFrame("Error Message");
+        loadImages();
     }
 
     private void setWindowDefaults() {
@@ -118,21 +120,43 @@ public class ImageUI extends JFrame implements Serializable {
         fileMenu.add(searchItem);
     }
 
-    // Loads image to repository
+    // Loads images that are already in the repository
+    private void loadImages() {
+
+        File folder = new File(System.getProperty("user.dir") + "\\images\\");
+        File[] listOfImages = folder.listFiles();
+        String message = "Couldn't Old Images, please try again";
+
+        try {
+            for (File file : listOfImages) {
+                if (file.isFile()) {
+                    BufferedImage img = ImageIO.read(file);
+                    images.put(fileComponent(file.getName()), img);
+
+                    imageField.setText(imageField.getText() + fileComponent(file.getName()) + "\n");
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame, message, "Error Message", JOptionPane.ERROR_MESSAGE);
+        }
+
+
+    }
+
+    // Add an image to repository
     private void addImage() {
         JFileChooser j = new JFileChooser();
         int result = j.showOpenDialog(null);
         String message = "Couldn't load, please try again";
         BufferedImage img = null;
 
-
         if (result == JFileChooser.APPROVE_OPTION) {
-            String filename = j.getSelectedFile().toString();
+            String filename = (j.getSelectedFile().toString());
             try {
                 img = ImageIO.read(new File(filename));
-                images.add(img);
+                images.put(fileComponent(filename), img);
 
-                imageField.setText(imageField.getText() + filename + "\n");
+                imageField.setText(imageField.getText() + fileComponent(filename) + "\n");
 
             } catch (Exception ex) {
                 System.out.println(ex);
@@ -143,39 +167,40 @@ public class ImageUI extends JFrame implements Serializable {
         }
     }
 
+    /**
+     * Removes the path from the file name
+     * Credit to:
+     * https://www.tutorialspoint.com/java-program-to-remove-path-information-from-a-filename-returning-only-its-file-component#:~:text=The%20method%20fileCompinent()%20is,only%20of%20the%20file%20name.
+     * @param fname the full file path
+     */
+    public static String fileComponent(String fname) {
+        int pos = fname.lastIndexOf(File.separator);
+        if(pos > -1)
+            return fname.substring(pos + 1);
+        else
+            return fname;
+    }
+
     // Searches an image
     // TODO
     private void saveImages() {
-        JFileChooser j = new JFileChooser();
-        int result = j.showSaveDialog(null);
+
         String message = "Couldn't save, please try again";
-        if (result == JFileChooser.APPROVE_OPTION) {
-            String filename = j.getSelectedFile().toString();
-            try {
-                FileOutputStream outPutStream = new FileOutputStream(filename);
-                ObjectOutputStream out = new ObjectOutputStream(outPutStream);
 
-                for (BufferedImage eachImage : images) {
-                    ImageIO.write(eachImage, "png", out); 
-                }
+        try {
 
-                out.close();
-                outPutStream.close();
-            } catch (IOException ex) {
-                System.out.println(ex);
-                JOptionPane.showMessageDialog(frame, message, "Error Message", JOptionPane.ERROR_MESSAGE);
+            for(Map.Entry<String, BufferedImage> entry : images.entrySet()) {
+                String fname = entry.getKey();
+                BufferedImage image = entry.getValue();
+
+                File file = new File (System.getProperty("user.dir") + "\\images\\" + fname);
+                ImageIO.write(image, "png", file);
+
             }
-        } else {
+
+        } catch (Exception ex) {
+            System.out.println(ex);
             JOptionPane.showMessageDialog(frame, message, "Error Message", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        out.defaultWriteObject();
-        out.writeInt(images.size());
-        for (BufferedImage eachImage : images) {
-            ImageIO.write(eachImage, "png", out); 
         }
     }
 
